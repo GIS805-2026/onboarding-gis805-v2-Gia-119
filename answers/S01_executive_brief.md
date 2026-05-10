@@ -1,4 +1,5 @@
 # Board Brief — S01
+Préparer par le chef de l'équipe de données
 
 ## Question du CEO
 
