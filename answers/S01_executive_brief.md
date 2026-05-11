@@ -56,9 +56,8 @@ Cela montre que le grain choisi (ligne de commande) est suffisant et stable.
 
 Après exécution :
 
--la première ligne du résultat (catégorie + région + revenu)
--la tendance principale identifiée (voir réponse dans ## Réponse exécutive)
--si une région ou une catégorie se détache
+La première ligne du résultat (catégorie + région + revenu).
+La tendance principale identifiée (voir réponse dans ## Réponse exécutive).
 
 ## Validation
 J’ai vérifié que les tables utilisées existent dans DuckDB : raw_fact_sales, raw_dim_product, raw_dim_store.
@@ -66,12 +65,12 @@ J’ai vérifié que les colonnes métier existent et sont utilisables : raw_fac
 J’ai exécuté la requête de preuve sur raw_fact_sales, raw_dim_product et raw_dim_store, et j’ai confirmé que line_total est bien la mesure de revenu. J’ai aussi vérifié l’existence des clés et l’absence de valeurs nulles critiques avant d’agréger.
 
 ## Risques / limites
--Limites des données brutes : les tables raw_* ne sont pas optimisées pour les analyses répétées ; les jointures sont lentes  et risquent des erreurs si les clés changent.
--Qualité des données : potentiels doublons, valeurs manquantes dans line_total ou clés étrangères orphelines.
--Portée limitée : cette analyse ne couvre que les ventes, pas les retours, inventaires ou budgets — le CEO pourrait vouloir plus.
--Grain assumé : si une commande a plusieurs lignes, le revenu par région pourrait être surévalué si on ne dédoublonne pas correctement.
+Limites des données brutes : les tables raw_* ne sont pas optimisées pour les analyses répétées ; les jointures sont lentes  et risquent des erreurs si les clés changent.
+Qualité des données : potentiels doublons, valeurs manquantes dans line_total ou clés étrangères orphelines.
+Portée limitée : cette analyse ne couvre que les ventes, pas les retours, inventaires ou budgets — le CEO pourrait vouloir plus.
+Grain assumé : si une commande a plusieurs lignes, le revenu par région pourrait être surévalué si on ne dédoublonne pas correctement.
 
 ## Prochaine recommandation
--Construire le schéma en étoile avec fact_sales au grain défini, et les dimensions conformes dim_product, dim_store, etc.
--Implémenter les clés de substitution (product_key, store_key) pour éviter les problèmes de clés naturelles.
--Ajouter des dimensions temporelles (dim_date) pour permettre des analyses par trimestre.
+Construire le schéma en étoile avec fact_sales au grain défini, et les dimensions conformes dim_product, dim_store, etc.
+Implémenter les clés de substitution (product_key, store_key) pour éviter les problèmes de clés naturelles.
+Ajouter des dimensions temporelles (dim_date) pour permettre des analyses par trimestre.
