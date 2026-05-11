@@ -49,10 +49,10 @@ GROUP BY
 ORDER BY
     revenue DESC;
 
--elle joint le fait de vente (raw_fact_sales) avec les dimensions métier pertinentes
--elle agrège la mesure additive line_total
--elle délivre exactement le KPI demandé : revenu par catégorie de produit et par région de magasin
--cela montre que le grain choisi (ligne de commande) est suffisant et stable
+Elle joint le fait de vente (raw_fact_sales) avec les dimensions métier pertinentes.
+Elle agrège la mesure additive line_total.
+Elle délivre exactement le KPI demandé : revenu par catégorie de produit et par région de magasin.
+Cela montre que le grain choisi (ligne de commande) est suffisant et stable.
 
 Après exécution :
 
@@ -62,18 +62,14 @@ Après exécution :
 
 ## Validation
 J’ai vérifié que les tables utilisées existent dans DuckDB : raw_fact_sales, raw_dim_product, raw_dim_store.
-J’ai vérifié que les colonnes métier existent et sont utilisables :
--raw_fact_sales.line_total
--raw_dim_product.category
--raw_dim_store.region
-
-j’ai exécuté la requête de preuve sur raw_fact_sales, raw_dim_product et raw_dim_store, et j’ai confirmé que line_total est bien la mesure de revenu. J’ai aussi vérifié l’existence des clés et l’absence de valeurs nulles critiques avant d’agréger.
+J’ai vérifié que les colonnes métier existent et sont utilisables : raw_fact_sales.line_total, raw_dim_product.category, raw_dim_store.region.
+J’ai exécuté la requête de preuve sur raw_fact_sales, raw_dim_product et raw_dim_store, et j’ai confirmé que line_total est bien la mesure de revenu. J’ai aussi vérifié l’existence des clés et l’absence de valeurs nulles critiques avant d’agréger.
 
 ## Risques / limites
 -Limites des données brutes : les tables raw_* ne sont pas optimisées pour les analyses répétées ; les jointures sont lentes  et risquent des erreurs si les clés changent.
 -Qualité des données : potentiels doublons, valeurs manquantes dans line_total ou clés étrangères orphelines.
--Portée limitée : cette analyse ne couvre que les ventes, pas les retours, inventaires ou budgets — le CEO pourrait vouloir   plus.
--Grain assumé : si une commande a plusieurs lignes, le revenu par région pourrait être surévalué si on ne dédoublonne pas     correctement.
+-Portée limitée : cette analyse ne couvre que les ventes, pas les retours, inventaires ou budgets — le CEO pourrait vouloir plus.
+-Grain assumé : si une commande a plusieurs lignes, le revenu par région pourrait être surévalué si on ne dédoublonne pas correctement.
 
 ## Prochaine recommandation
 -Construire le schéma en étoile avec fact_sales au grain défini, et les dimensions conformes dim_product, dim_store, etc.
