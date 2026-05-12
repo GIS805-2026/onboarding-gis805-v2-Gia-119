@@ -35,29 +35,18 @@ dans dim_store
 
 
 ## Preuve
-1. Requête de preuve :
-    SELECT
-    p.category      AS product_category,
-    s.region        AS store_region,
-    SUM(f.line_total) AS revenue
-FROM raw_fact_sales f
-JOIN raw_dim_product p ON f.product_id = p.product_id
-JOIN raw_dim_store   s ON f.store_id   = s.store_id
-GROUP BY
-    p.category,
-    s.region
-ORDER BY
-    revenue DESC;
-
-Elle joint le fait de vente (raw_fact_sales) avec les dimensions métier pertinentes.
-Elle agrège la mesure additive line_total.
-Elle délivre exactement le KPI demandé : revenu par catégorie de produit et par région de magasin.
-Cela montre que le grain choisi (ligne de commande) est suffisant et stable.
-
-Après exécution :
-
-La première ligne du résultat (catégorie + région + revenu).
-La tendance principale identifiée (voir réponse dans ## Réponse exécutive).
+1. La requête de preuve :
+   duckdb db/nexamart.duckdb -c "
+   WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.line_total) AS revenue
+    FROM raw_fact_sales f JOIN raw_orders o ON f.order_number = o.order_number
+    JOIN raw_dim_product p ON f.product_id = p.product_id
+    JOIN raw_dim_store s ON f.store_id = s.store_id
+    JOIN raw_dim_date d  ON o.order_date = d.date_key
+    GROUP BY p.category, s.region, d.year, d.month ), revenue_with_lag AS ( SELECT category, region, year, month, revenue, LAG(revenue) OVER (
+            PARTITION BY category, region ORDER BY year, month) AS previous_revenue, revenue - LAG(revenue) OVER (PARTITION BY category, region
+            ORDER BY year, month) AS revenue_change
+    FROM revenue_by_month)
+SELECT * FROM revenue_with_lag WHERE previous_revenue IS NOT NULL ORDER BY revenue_change ASC;" 
 
 ## Validation
 J’ai vérifié que les tables utilisées existent dans DuckDB : raw_fact_sales, raw_dim_product, raw_dim_store.
