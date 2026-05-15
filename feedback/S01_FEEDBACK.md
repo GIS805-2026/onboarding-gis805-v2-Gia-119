@@ -1,8 +1,10 @@
 # Rétroaction automatisée -- S01 (Diagnostic fondamental -- NexaMart kickoff)
 
-_Générée le 2026-05-14T22:18:17+00:00 -- Run `20260514T221333Z-7d34bf6a`_
+_Générée le 2026-05-15T12:31:26+00:00 -- Run `20260515T122624Z-00a5a04f`_
 
 Ce document est produit par un pipeline reproductible (vérification SQL déterministe + analyse LLM du brief et de la déclaration IA). Une revue humaine précède toujours sa publication. **À ce stade expérimental, aucune note ni étiquette de niveau n'est diffusée : l'objectif est purement formatif.**
+
+> ⚠️ **Avertissement instructeur (à retirer avant publication) :** cette analyse a été générée avec `--skip-pull`. Le contenu correspond au commit local et **n'est peut-être pas la dernière version poussée par l'étudiant·e**.
 
 ---
 
@@ -15,7 +17,16 @@ _Observation technique : colonnes manquantes (oracle): quarter_
 <details><summary>Requête analysée — cliquez pour déplier</summary>
 
 ```sql
-WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.line_total) AS revenue FROM raw_fact_sales f JOIN raw_orders o ON f.order_number = o.order_number JOIN raw_dim_product p ON f.product_id = p.product_id JOIN raw_dim_store s ON f.store_id = s.store_id JOIN raw_dim_date d ON o.order_date = d.date_key GROUP BY p.category, s.region, d.year, d.month ), revenue_with_lag AS ( SELECT category, region, year, month, revenue, LAG(revenue) OVER ( PARTITION BY category, region ORDER BY year, month) AS previous_revenue, revenue - LAG(revenue) OVER (PARTITION BY category, region ORDER BY year, month) AS revenue_change FROM revenue_by_month) SELECT * FROM revenue_with_lag WHERE previous_revenue IS NOT NULL ORDER BY revenue_change ASC;
+WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.line_total) AS revenue
+    FROM raw_fact_sales f JOIN raw_orders o ON f.order_number = o.order_number
+    JOIN raw_dim_product p ON f.product_id = p.product_id
+    JOIN raw_dim_store s ON f.store_id = s.store_id
+    JOIN raw_dim_date d  ON o.order_date = d.date_key
+    GROUP BY p.category, s.region, d.year, d.month ), revenue_with_lag AS ( SELECT category, region, year, month, revenue, LAG(revenue) OVER (
+            PARTITION BY category, region ORDER BY year, month) AS previous_revenue, revenue - LAG(revenue) OVER (PARTITION BY category, region
+            ORDER BY year, month) AS revenue_change
+    FROM revenue_by_month)
+SELECT * FROM revenue_with_lag WHERE previous_revenue IS NOT NULL ORDER BY revenue_change ASC;
 ```
 
 </details>
@@ -29,7 +40,6 @@ WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.l
 
 **Pistes :**
 > Requête extraite par LLM (aucun bloc fencé détecté). Encadrez votre requête finale par ```sql ... ``` pour éliminer toute ambiguïté.
-> Votre `db/nexamart.duckdb` est absente ou vide ; la requête a été exécutée contre une **base de référence cohorte** (seed instructeur). Les chiffres retournés ne correspondent donc pas à vos propres données : reconstruisez votre base avec `python src/run_pipeline.py` (ou `.\run.ps1 load`) pour valider vos calculs sur votre seed personnel.
 > Synonymes acceptés par colonne:
   category: ['category', 'categorie', 'p.category', 'sous_categorie']
   region: ['region', 's.region']
@@ -38,33 +48,33 @@ WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.l
 
 ## 2. Rétroaction pédagogique sur le brief
 
-> Bon diagnostic opérationnel avec grain clair et une requête de preuve fonctionnelle; le brief identifie correctement catégories et régions prioritaires. Pour monter en excellence, documentez la traçabilité (commits, note IA) et renforcez la justification décisionnelle (SCD, KPI chiffrés, checks reproductibles).
+> Le brief présente un bon diagnostic métier et un modèle dimensionnel cohérent (grain et mesures explicites) et inclut une requête de preuve exécutée. Il manque cependant trace du processus (commits, note IA) et des contrôles automatisés reproductibles pour production.
 
 ### Observations par dimension
 
 **Model quality**
-- Observation : Le brief déclare explicitement le grain (ligne de commande), propose la création de line_total = quantity × unit_price et un schéma en étoile Kimball avec dim_product et dim_store.
-- Piste d'amélioration : Préciser le traitement SCD (type 2) pour dim_product/dim_store et justifier le choix du pattern par rapport aux changements historiques.
+- Observation : Le brief précise le grain («une ligne de commande (order_number, line_id)»), la mesure calculée (line_total = quantity × unit_price) et les dimensions product/ store.
+- Piste d'amélioration : Documenter explicitement le pattern SCD (type 2) et justifier pourquoi/si utilisé, et mentionner les choix de clés substituts vs naturelles.
 
 **Validation quality**
-- Observation : Le document inclut une requête DuckDB qui calcule revenue_by_month et utilise LAG() pour mesurer la variation de revenu par catégorie et région.
-- Piste d'amélioration : Ajouter des contrôles explicites pour NULLs, doublons du grain et tests de cohérence (somme des line_total vs total attendu) et montrer les résultats des checks.
+- Observation : Le brief inclut une commande DuckDB et une requête avec LAG pour mesurer l'évolution mensuelle des revenus et affirme avoir exécuté ces contrôles.
+- Piste d'amélioration : Ajouter des checks explicites traitant les NULLs, les doublons du grain et un test 'make check' automatique reproduisible.
 
 **Executive justification**
-- Observation : La section exécutive identifie les catégories et régions dominantes (ex. Toys & Games, Québec et Ontario) et conclut que le chiffre d'affaires est concentré, utile pour la prise de décision.
-- Piste d'amélioration : Formuler une recommandation décisionnelle plus précise (ex. prioriser X régions/catégories pour investissement ou réduction de l'assortiment) et ajouter un ou deux KPI chiffrés à l'appui.
+- Observation : La réponse exécutive résume les observations clés («les catégories Toys & Games, Automotive... génèrent les revenus les plus élevés, principalement au Québec et en Ontario») en langage métier.
+- Piste d'amélioration : Formuler une recommandation décisionnelle claire (p.ex. prioriser X régions/catégories pour investissement ou réduction de gamme) et ajouter chiffres clés succincts (pct de revenu).
 
 **Process trace**
-- Observation : Le brief indique que la requête a été exécutée et que certaines vérifications ont été faites, mais il n'y a aucune mention d'un historique de commits ni d'une note IA détaillée.
-- Piste d'amélioration : Fournir un log de commits git (≥3 commits) avec messages explicites et ajouter une note IA précisant outil, prompt utilisé et validation humaine.
+- Observation : Aucune mention d'un historique de commits git ni d'une note sur l'usage d'IA ou d'un decision log dans le brief.
+- Piste d'amélioration : Fournir l'historique git (≥3 commits) avec messages descriptifs et une courte note IA indiquant outils et validation humaine.
 
 **Reproducibility**
-- Observation : La preuve montre la commande duckdb db/nexamart.duckdb -c "..." mais le chemin de la base est codé en dur et le README/steps de reproduction ne sont pas fournis.
-- Piste d'amélioration : Ajouter un README clair avec étapes 'clone → installer dépendances → exécuter make check' et éviter les chemins codés en dur (ou documenter les ajustements nécessaires).
+- Observation : Le brief donne la commande DuckDB (duckdb db/nexamart.duckdb -c "..."), mais utilise un chemin codé en dur sans README de reproduction.
+- Piste d'amélioration : Ajouter un README avec étapes exactes pour cloner, localiser la DB ou loader des données, et un script 'make run' pour exécuter la requête en <5 minutes.
 
 ## 3. Déclaration d'utilisation de l'IA
 
-> La déclaration documente l'outil utilisé, l'étape (Séance S02) et donne une validation humaine détaillée via requêtes SQL. En revanche, elle ne mentionne pas de version/modèle précis pour Copilot ni les limites ou erreurs observées, ce qui empêche une conformité complète.
+> La déclaration couvre les points demandés (outil nommé, étape d'utilisation et validation humaine), mais l'information sur l'outil reste générique (pas de version/modèle précis) et aucune limite ou erreur rencontrée n'est documentée. Ajoutez la version/modèle exact du service IA utilisé et indiquez les limites ou erreurs observées pour atteindre le score maximal.
 
 **Sujets bien couverts dans votre déclaration :**
 
@@ -85,11 +95,11 @@ WITH revenue_by_month AS ( SELECT p.category, s.region, d.year, d.month, SUM(f.l
 
 ## 5. Traçabilité
 
-- **Run ID :** `20260514T221333Z-7d34bf6a`
+- **Run ID :** `20260515T122624Z-00a5a04f`
 - **Devoir :** `S01`
 - **Étudiant·e :** `Gia-119`
-- **Commit analysé :** `4d22863`
-- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260514T221333Z-7d34bf6a/Gia-119/`
+- **Commit analysé :** `8224145`
+- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260515T122624Z-00a5a04f/Gia-119/`
 - **Prompts (SHA-256) :**
   - `sql_extractor_system` : `90ee9e277de7a27f...`
   - `rubric_grader_system` : `505f32d1d8319d66...`
